@@ -827,6 +827,76 @@ def get_amplification_error_count(fragments_list):
     total_amp_errors = len(np.where(np.array(temp_fragments) >= 10)[0])
     return total_amp_errors, total_bases, total_amp_errors / total_bases
 
+def create_cnvs(genome_length, parent_nodes, cnv_rate, seed_val, min_cnv_lenght=2):
+    np.random.seed(seed_val)
+    num_edges = len(parent_nodes) - 1
+
+    num_cnvs = num_edges * np.random.poisson(5)
+    cnv_origin_nodes = np.random.choice(np.arange(1, len(parent_nodes)), size=num_cnvs).astype(int)
+
+    total_cnv_length = int(np.ceil(genome_length * cnv_rate))
+    if total_cnv_length % 2 != 0:
+        total_cnv_length += 1
+
+    cnv_lengths = min_cnv_lenght * np.ones(num_cnvs, dtype=int)
+    ratios = np.random.choice(np.arange(1, 11), size=num_cnvs)
+    per_length = (total_cnv_length - min_cnv_lenght*num_cnvs) / np.sum(ratios)
+    cnv_lengths += np.floor(per_length * ratios).astype(int)
+    diff = total_cnv_length - np.sum(cnv_lengths)
+    cnv_lengths[0] += diff
+
+    total_non_cnv_length = genome_length - total_cnv_length
+    ratios = np.random.choice(np.arange(1, 101), size=num_cnvs+1)
+    per_length = total_non_cnv_length / np.sum(ratios)
+    non_cnv_lengths = np.floor(per_length * ratios).astype(int)
+    diff = total_non_cnv_length - np.sum(non_cnv_lengths)
+    non_cnv_lengths[0] += diff
+
+    cnv_start_positions = np.zeros(num_cnvs, dtype=int)
+    cnv_2_alleles = np.zeros(num_cnvs, dtype=int)
+    cur_pos = non_cnv_lengths[0]
+    for i in range(num_cnvs):
+        cur_cnv_length = cnv_lengths[i]
+
+        u = np.random.rand()
+        if u > 0.5:
+            cnv_2_alleles[i] = 1
+
+        cnv_start_positions[i] = cur_pos
+        #print("\tCNV no: ", i, "\tStart: ", cur_pos, "\tEnd: ", cur_pos + cur_cnv_length)
+
+        cur_pos += cur_cnv_length + non_cnv_lengths[i+1]
+        #print("\t\tNo CNV no: ", i+1, "\tUntil: ", cur_pos)
+
+    return num_cnvs, cnv_origin_nodes, cnv_start_positions, cnv_lengths, cnv_2_alleles, total_cnv_length
+
+
+def add_cnvs_to_genome(leaf_idx, leaf_nodes, parent_nodes, cell_genome,
+                       cnv_origin_nodes, cnv_start_positions, cnv_lengths, cnv_2_alleles):
+    num_total_effected_pos = 0
+    num_total_cnv = 0
+
+    cell_id = leaf_nodes[leaf_idx]
+    ancestor_list = get_node_ancestors(cell_id, parent_nodes)
+
+    for ancestor_id in ancestor_list:
+        cell_mutations_idx = np.where(cnv_origin_nodes == ancestor_id)[0]
+        for mut_idx in cell_mutations_idx:
+            mut_loc = cnv_start_positions[mut_idx]
+            cur_cnv_length = cnv_lengths[mut_idx]
+
+            allele_idx = cnv_2_alleles[mut_idx]
+            if allele_idx == 0:
+                cell_genome[mut_loc:mut_loc + cur_cnv_length, 1] = cell_genome[mut_loc:mut_loc + cur_cnv_length, 0]
+            else:
+                cell_genome[mut_loc:mut_loc + cur_cnv_length, 0] = cell_genome[mut_loc:mut_loc + cur_cnv_length, 1]
+
+            num_total_cnv += 1
+            num_total_effected_pos += cur_cnv_length
+
+    return cell_genome, num_total_cnv, num_total_effected_pos
+
+
 
 def main():
     dt = datetime.datetime.now()
@@ -866,6 +936,8 @@ def main():
                         type=int, default=2)
     parser.add_argument('--read_length', help="Specify the read length. Default: 100", type=int, default=100)
     parser.add_argument('--seed_val', help="Specify the seed. Default: 123", type=int, default=123)
+    parser.add_argument('--cnv_ratio', help="Specify the CNV ratio in the genome in range [0,1]. Default: 0",
+                        type=float, default=0)
     args = parser.parse_args()
 
     start_time_global = time.time()
@@ -969,6 +1041,21 @@ def main():
     print("\nTotal time: ", end_time - start_time)
     print("Part 3 ends...")
     ###
+     # Step 3.1: Create CNVs and assign to branches
+    if args.cnv_ratio != 0:
+        num_cnvs, cnv_origin_nodes, cnv_start_positions, cnv_lengths, cnv_2_alleles, total_cnv_length = create_cnvs(
+            num_bp, parent_nodes, args.cnv_ratio, args.seed_val)
+        print("\tNumber or CNVs: ", num_cnvs, " ( CNV ratio: ", args.cnv_ratio, ")")
+        print("\tNumber or basepairs effected by CNVs: ", total_cnv_length)
+        filename = truth_dir + "cnv_origin_nodes.txt"
+        np.savetxt(filename, cnv_origin_nodes, fmt='%d')
+        filename = truth_dir + "cnv_start_positions.txt"
+        np.savetxt(filename, cnv_start_positions, fmt='%d')
+        filename = truth_dir + "cnv_lengths.txt"
+        np.savetxt(filename, cnv_lengths, fmt='%d')
+        filename = truth_dir + "cnv_2_alleles.txt"
+        np.savetxt(filename, cnv_2_alleles, fmt='%d')
+
 
     # PART 4: Cell simulation
     start_time = time.time()
@@ -991,9 +1078,19 @@ def main():
 
         filename = args.global_dir + "cell_" + str(leaf_idx) + "_genome.pickle"
         save_dictionary(filename, cell_genome)
+        if args.cnv_ratio != 0:
+            cell_cnv_genome, cell_num_total_cnv, cell_num_total_effected_pos = add_cnvs_to_genome(
+                leaf_idx, leaf_nodes, parent_nodes, cell_genome,
+                cnv_origin_nodes, cnv_start_positions, cnv_lengths, cnv_2_alleles)
+            filename = truth_dir + "cell_" + str(leaf_idx) + "_cnv_genome.txt"
+            np.savetxt(filename, cell_cnv_genome, fmt='%d')
+            cell_genome = cell_cnv_genome  # To mask the genome with CNVs
+            print("\tCell: ", leaf_idx, " has ", cell_num_total_cnv,
+                  " CNV regions effecting ", cell_num_total_effected_pos, " basepairs.")
         end_time_temp = time.time()
+        
         print("\n\tTotal time for cell's generateCellGenotype: ", end_time_temp - start_time_temp)
-
+        
         start_time_temp = time.time()
         masked_genome, num_mask, num_covered_bp, mask_info, p_ado = mask_genome(cell_genome, ado_type=args.ado_type,
                                                                                 p_ado=args.p_ado,
