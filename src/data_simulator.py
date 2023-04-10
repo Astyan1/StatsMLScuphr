@@ -1044,7 +1044,7 @@ def main():
      # Step 3.1: Create CNVs and assign to branches
     if args.cnv_ratio != 0:
         num_cnvs, cnv_origin_nodes, cnv_start_positions, cnv_lengths, cnv_2_alleles, total_cnv_length = create_cnvs(
-            num_bp, parent_nodes, args.cnv_ratio, args.seed_val)
+            args.genome_length, parent_nodes, args.cnv_ratio, args.seed_val)
         print("\tNumber or CNVs: ", num_cnvs, " ( CNV ratio: ", args.cnv_ratio, ")")
         print("\tNumber or basepairs effected by CNVs: ", total_cnv_length)
         filename = truth_dir + "cnv_origin_nodes.txt"
