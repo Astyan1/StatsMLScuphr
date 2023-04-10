@@ -1032,7 +1032,7 @@ def main():
     save_dictionary(filename, parent_nodes)
     filename = args.global_dir + "leaf_nodes.pickle"
     save_dictionary(filename, leaf_nodes)
-
+    truth_dir=args.globar_dir
     mut_origin_nodes = assign_mutations_to_nodes(parent_nodes, num_mut=num_mut, seed_val=args.seed_val)
     filename = args.global_dir + "mut_origin_nodes.pickle"
     save_dictionary(filename, mut_origin_nodes)
