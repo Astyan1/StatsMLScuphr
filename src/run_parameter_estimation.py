@@ -223,7 +223,7 @@ def main():
     parser.add_argument('--pos_range_max', help="Specify the position range (max value). Default: 0", type=int,
                         default=0)
     parser.add_argument('--print_status', help="Specify the print (0 for do not print, 1 for print). Default: 0",
-                        type=int, default=0)
+                        type=int, default=1)
     parser.add_argument('--scuphr_strategy',
                         help="Specify the strategy for Scuphr (paired, singleton, hybrid). Default: paired",
                         type=str, default="paired")

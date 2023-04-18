@@ -8,7 +8,7 @@ from fragment_probability_without_pae import fragment_log_probability
 from read_probability import convert_fragment_lambda_key_format
 
 
-def compute_zcy_log_dict_pos_original(dataset, read_dicts, p_ado, p_ae, print_results):
+def compute_zcy_log_dict_pos_original(dataset, read_dicts, p_ado, p_ae,p_cnv, print_results):
     """ Original log_ZCY calculation. Returns a dictionary with zcy key. """
     if print_results:
         print("\n*****\nComputing Log Z_c_y dictionary...")
@@ -58,38 +58,39 @@ def compute_zcy_log_dict_pos_original(dataset, read_dicts, p_ado, p_ae, print_re
                                     log_sum_frags = np.log(1)
 
                             else:
-                                ado_stats = np.array([x1, x2])
-                                lambda_list = partition_lambda(lc, ado_stats)
-                                fragment_list = enumerate_fragment3(f1f2)
+                                for cnv in range(4):
+                                    ado_stats = np.array([x1, x2])
+                                    lambda_list = partition_lambda(lc, ado_stats)
+                                    fragment_list = enumerate_fragment3(f1f2)
 
-                                log_sum_frags = np.NINF
-                                log_frag_prob_dict = {}
+                                    log_sum_frags = np.NINF
+                                    log_frag_prob_dict = {}
 
-                                for fragments in fragment_list:
-                                    for lambdas in lambda_list:
-                                        key_1 = "_".join(str(aa) for aa in fragments)
-                                        key_2 = "_".join(str(aa) for aa in lambdas)
-                                        key = key_1 + "_" + key_2
-                                        new_read_key = convert_fragment_lambda_key_format(key)
-                                        log_prob_read = read_dicts[str(c)][new_read_key]
+                                    for fragments in fragment_list:
+                                        for lambdas in lambda_list:
+                                            key_1 = "_".join(str(aa) for aa in fragments)
+                                            key_2 = "_".join(str(aa) for aa in lambdas)
+                                            key = key_1 + "_" + key_2
+                                            new_read_key = convert_fragment_lambda_key_format(key)
+                                            log_prob_read = read_dicts[str(c)][new_read_key]
 
-                                        new_frag_key = key
-                                        if lambdas[2] == 0:
-                                            new_frag_key = key[0:13] + 'N N' + key[16:]
+                                            new_frag_key = key
+                                            if lambdas[2] == 0:
+                                                new_frag_key = key[0:13] + 'N N' + key[16:]
 
-                                        if new_frag_key not in log_frag_prob_dict:
-                                            log_prob_frag = fragment_log_probability(fragments, lambdas, f1f2,
-                                                                                     ado_stats, p_ae)
+                                            if new_frag_key not in log_frag_prob_dict:
+                                                log_prob_frag = fragment_log_probability(fragments, lambdas, f1f2,
+                                                                                        ado_stats, p_ae)
 
-                                            if log_prob_frag > np.log(1) or log_prob_frag < np.NINF:
-                                                print("\nError: Probability out of range!")
-                                                print(zcy_key, log_prob_frag, np.exp(log_prob_frag), key, new_frag_key)
-                                                sys.exit()
+                                                if log_prob_frag > np.log(1) or log_prob_frag < np.NINF:
+                                                    print("\nError: Probability out of range!")
+                                                    print(zcy_key, log_prob_frag, np.exp(log_prob_frag), key, new_frag_key)
+                                                    sys.exit()
 
-                                            log_sum_frags = np.logaddexp(log_sum_frags, (log_prob_read + log_prob_frag))
-                                            log_frag_prob_dict[new_frag_key] = log_prob_frag
+                                                log_sum_frags = np.logaddexp(log_sum_frags, (log_prob_read + log_prob_frag))
+                                                log_frag_prob_dict[new_frag_key] = log_prob_frag
 
-                            log_temp_x2 = log_sum_frags + np.log(np.power(p_ado, x2) * np.power(1 - p_ado, 1 - x2))
+                            log_temp_x2 = log_sum_frags + np.log(np.power(p_ado, x2) * np.power(1 - p_ado, 1 - x2))+cnv*np.log(p_cnv)-p_cnv-cnv-np.log(np.math.factorial(cnv))
                             log_sum_x2 = np.logaddexp(log_sum_x2, log_temp_x2)
 
                         log_temp_x1 = log_sum_x2 + np.log(np.power(p_ado, x1) * np.power(1 - p_ado, 1 - x1))
@@ -108,7 +109,7 @@ def compute_zcy_log_dict_pos_original(dataset, read_dicts, p_ado, p_ae, print_re
     return log_zcy_dict
 
 
-def compute_zcydd_log_dict_pos(dataset, read_dicts, p_ae, print_results, log_zcydda_dict=None):
+def compute_zcydd_log_dict_pos(dataset, read_dicts, p_ae,p_cnv, print_results, log_zcydda_dict=None):
     if print_results:
         print("\n*****\nComputing Log Z_c_y dictionary...")
 
