@@ -37,7 +37,7 @@ def load_dictionary(filename):
 
 
 def run_metropolis(chain, dataset, read_prob_dir, output_dir, max_iter, burnin, start_p_ae,
-                   start_p_ado, a_g, b_g, seed_val, printResults, positions):
+                   start_p_ado,start_p_cnv,a_g, b_g, seed_val, printResults, positions):
     start_time = time.time()
 
     print("\tRunning Metropolis-Hastings for chain: ", chain)
@@ -49,12 +49,15 @@ def run_metropolis(chain, dataset, read_prob_dir, output_dir, max_iter, burnin, 
         start_p_ae = np.random.rand() / 10
     if start_p_ado == -1:
         start_p_ado = np.random.rand()
+    if start_p_cnv == -1:
+        start_p_ado = np.random.rand()/10
 
     # print("Start p_ae: ", start_p_ae)
     # print("Start p_ado: ", start_p_ado)
 
     p_ado_samples = np.zeros(max_iter)
     p_ae_samples = np.zeros(max_iter)
+    p_cnv_samples = np.zeros(max_iter)
     acceptance_samples = np.zeros(max_iter)
     log_posterior_samples = np.zeros(max_iter)
     log_prior_samples = np.zeros(max_iter)
@@ -64,6 +67,7 @@ def run_metropolis(chain, dataset, read_prob_dir, output_dir, max_iter, burnin, 
     # also save the rejected ones
     p_ado_samples_all = []
     p_ae_samples_all = []
+    p_cnv_samples_all = []
     acceptance_samples_all = []
     log_posterior_samples_all = []
     log_prior_samples_all = []
@@ -73,16 +77,18 @@ def run_metropolis(chain, dataset, read_prob_dir, output_dir, max_iter, burnin, 
 
     p_ado_samples[0] = start_p_ado
     p_ae_samples[0] = start_p_ae
+    p_cnv_samples[0] = start_p_cnv
     acceptance_samples[0] = 1
-    start_log_lik = calculate_loglikelihood(positions, start_p_ado, start_p_ae, dataset, read_prob_dir,
+    start_log_lik = calculate_loglikelihood(positions, start_p_ado, start_p_ae,start_p_cnv, dataset, read_prob_dir,
                                             a_g, b_g, print_results=False)
-    start_log_pri = calculate_log_prior(start_p_ado, start_p_ae)
+    start_log_pri = calculate_log_prior(start_p_ado, start_p_ae,start_p_cnv)
     log_prior_samples[0] = start_log_pri
     log_likelihood_samples[0] = start_log_lik
     log_posterior_samples[0] = start_log_lik + start_log_pri
 
     p_ado_samples_all.append(start_p_ado)
     p_ae_samples_all.append(start_p_ae)
+    p_cnv_samples_all.append(start_p_cnv)
     acceptance_samples_all.append(1)
     log_posterior_samples_all.append(log_posterior_samples[0])
     log_prior_samples_all.append(start_log_pri)
@@ -96,15 +102,16 @@ def run_metropolis(chain, dataset, read_prob_dir, output_dir, max_iter, burnin, 
         # Get current values
         current_p_ado = p_ado_samples[iter_ - 1]
         current_p_ae = p_ae_samples[iter_ - 1]
+        current_p_cnv = p_cnv_samples[iter_ - 1]
         current_logposterior = log_posterior_samples[iter_ - 1]
         current_log_pri = log_prior_samples[iter_ - 1]
         current_log_lik = log_likelihood_samples[iter_ - 1]
 
         # Propose values
-        prop_p_ado, prop_p_ae = proposal_function(current_p_ado, current_p_ae)
-        prop_log_lik = calculate_loglikelihood(positions, prop_p_ado, prop_p_ae, dataset, read_prob_dir,
+        prop_p_ado, prop_p_ae,prop_p_cnv = proposal_function(current_p_ado, current_p_ae,current_p_cnv)
+        prop_log_lik = calculate_loglikelihood(positions, prop_p_ado, prop_p_ae,prop_p_cnv, dataset, read_prob_dir,
                                                a_g, b_g, print_results=False)
-        prop_log_pri = calculate_log_prior(prop_p_ado, prop_p_ae)
+        prop_log_pri = calculate_log_prior(prop_p_ado, prop_p_ae,prop_p_cnv)
         prop_logposterior = prop_log_lik + prop_log_pri
 
         # Calculate ratios (symmetric proposal)
@@ -112,6 +119,7 @@ def run_metropolis(chain, dataset, read_prob_dir, output_dir, max_iter, burnin, 
 
         p_ado_samples_all.append(prop_p_ado)
         p_ae_samples_all.append(prop_p_ae)
+        p_cnv_samples_all.append(prop_p_cnv)
         log_posterior_samples_all.append(prop_logposterior)
         log_prior_samples_all.append(prop_log_pri)
         log_likelihood_samples_all.append(prop_log_lik)
@@ -122,6 +130,7 @@ def run_metropolis(chain, dataset, read_prob_dir, output_dir, max_iter, burnin, 
         if u <= ratio_posterior:
             p_ado_samples[iter_] = prop_p_ado
             p_ae_samples[iter_] = prop_p_ae
+            p_cnv_samples[iter_] = prop_p_cnv
             log_posterior_samples[iter_] = prop_logposterior
             acceptance_samples[iter_] = 1
             log_prior_samples[iter_] = prop_log_pri
@@ -131,6 +140,7 @@ def run_metropolis(chain, dataset, read_prob_dir, output_dir, max_iter, burnin, 
         else:
             p_ado_samples[iter_] = current_p_ado
             p_ae_samples[iter_] = current_p_ae
+            p_cnv_samples[iter_] = current_p_cnv
             log_posterior_samples[iter_] = current_logposterior
             log_prior_samples[iter_] = current_log_pri
             log_likelihood_samples[iter_] = current_log_lik
@@ -218,6 +228,7 @@ def main():
                         help="Specify the strategy for Scuphr (paired, singleton, hybrid). Default: paired",
                         type=str, default="paired")
     parser.add_argument('--seed_val', help="Specify the seed. Default: 123", type=int, default=123)
+    parser.add_argument('--p_cnv', help="probability cnv", type=float, default=0.05)
 
     args = parser.parse_args()
 
@@ -315,7 +326,7 @@ def main():
     chain_results = []
     for chain in range(args.num_chains):
         chain_results.append(run_metropolis(int(chain), dataset, read_prob_dir, chains_dir, args.max_iter,
-                                            args.burnin, args.p_ae, args.p_ado, args.a_g, args.b_g, args.seed_val,
+                                            args.burnin, args.p_ae, args.p_ado,args.p_cnv, args.a_g, args.b_g, args.seed_val,
                                             args.print_status, positions))
 
     sys.stdout.flush()
@@ -323,7 +334,7 @@ def main():
 
     # Plot results
     for chain_idx in range(len(chain_results)):
-        _, p_ado_samples, p_ae_samples, acceptance_samples, log_posterior_samples = chain_results[chain_idx]
+        _, p_ado_samples, p_ae_samples,p_cnv_samples, acceptance_samples, log_posterior_samples = chain_results[chain_idx]
 
         print("\nPlotting results for chain ", chain_idx)
         lag_list = [0, 2, 5, 10, 50, 100]
@@ -344,9 +355,10 @@ def main():
     print("\nResult plotting and saving are done.")
 
     print("\nSampling paramters from Metropolis-Hastings chains...")
-    mean_p_ado, mean_p_ae, std_p_ado, std_p_ae = sample_parameters(chain_results, args.max_iter)
+    mean_p_ado, mean_p_ae,mean_p_cnv, std_p_ado, std_p_ae, std_p_cnv= sample_parameters(chain_results, args.max_iter)
     print("\tp_ado: \tmean: ", mean_p_ado, "\tstd: ", std_p_ado)
     print("\tp_ae: \tmean: ", mean_p_ae, "\tstd: ", std_p_ae)
+    print("\tp_cnv: \tmean: ", mean_p_cnv, "\tstd: ", std_p_cnv)
 
 
 if __name__ == "__main__":

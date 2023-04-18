@@ -41,7 +41,7 @@ def load_dictionary(filename):
     return cell_dict
 
 
-def plot_chain(output_dir, chain_idx, p_ado_samples, p_ae_samples, acceptance_samples, log_posterior_samples, lag_list):
+def plot_chain(output_dir, chain_idx, p_ado_samples, p_ae_samples,p_cnv_samples, acceptance_samples, log_posterior_samples, lag_list):
     num_iter = p_ado_samples.shape[0]
     iter_array = np.arange(num_iter)
 
@@ -126,7 +126,7 @@ def plot_chain(output_dir, chain_idx, p_ado_samples, p_ae_samples, acceptance_sa
 
     for idx in range(len(lag_list)):
         lag = lag_list[idx]
-        rho_list[idx,:] = calculate_autocorrelation(p_ado_samples, p_ae_samples, lag)
+        rho_list[idx,:] = calculate_autocorrelation(p_ado_samples, p_ae_samples,p_cnv_samples, lag)
 
     plt.figure(figsize=(20,5))
     plt.scatter(lag_list, rho_list[:, 0], color='b')
@@ -144,10 +144,11 @@ def plot_chain(output_dir, chain_idx, p_ado_samples, p_ae_samples, acceptance_sa
     plt.close()
 
 
-def calculate_autocorrelation(p_ado_samples, p_ae_samples, lag):
-    chain = np.zeros((p_ado_samples.shape[0], 2))
+def calculate_autocorrelation(p_ado_samples, p_ae_samples,p_cnv_samples, lag):
+    chain = np.zeros((p_ado_samples.shape[0], 3))
     chain[:, 0] = p_ado_samples
     chain[:, 1] = p_ae_samples
+    chain[:, 2] = p_cnv_samples
 
     chain_mean = np.mean(chain, axis=0)
 
@@ -161,18 +162,20 @@ def calculate_autocorrelation(p_ado_samples, p_ae_samples, lag):
     return rho
 
 
-def calculate_log_prior(p_ado, p_ae, a_ado=1, b_ado=1, a_ae=1, b_ae=1):
+def calculate_log_prior(p_ado, p_ae,p_cnv, a_ado=1, b_ado=1, a_ae=1, b_ae=1,a_cnv=1,b_cnv=1):
     log_prior_ado = (a_ado - 1) * np.log(p_ado) + (b_ado - 1) * np.log(1 - p_ado) - np.log(sp.beta(a_ado, b_ado))
     log_prior_ae = (a_ae - 1) * np.log(p_ae) + (b_ae - 1) * np.log(1 - p_ae) - np.log(sp.beta(a_ae, b_ae))
+    log_prior_cnv=(a_cnv-1)*np.log(p_cnv)-b_cnv*p_cnv+a_cnv*np.log(b_cnv)-np.log(sp.gamma(a_cnv))
+    return log_prior_ado + log_prior_ae + log_prior_cnv
 
-    return log_prior_ado + log_prior_ae
 
-
-def proposal_function(p_ado, p_ae):
+def proposal_function(p_ado, p_ae,p_cnv):
     sd_ado = 0.01
     sd_ae = 0.01
+    sd_cnv = 0.01
     prop_p_ado = np.random.normal(p_ado, sd_ado)
     prop_p_ae = np.random.normal(p_ae, sd_ae)
+    prop_p_cnv = np.random.normal(p_cnv, sd_cnv)
 
     # Set limits
 
@@ -180,15 +183,17 @@ def proposal_function(p_ado, p_ae):
         prop_p_ado = np.random.normal(p_ado, sd_ado)
     while prop_p_ae <= 0 or prop_p_ae > 1:
         prop_p_ae = np.random.normal(prop_p_ae, sd_ae)
+    while prop_p_cnv <= 0 or prop_p_cnv > 1:
+        prop_p_cnv = np.random.normal(prop_p_cnv, sd_cnv)
 
-    return prop_p_ado, prop_p_ae
+    return prop_p_ado, prop_p_ae,prop_p_cnv
 
 
 # TODO FIX HERE! Pickling error, cannot to multiprocessing
-def calculate_loglikelihood(positions, p_ado, p_ae, dataset, read_prob_dir, a_g, b_g, print_results):
+def calculate_loglikelihood(positions, p_ado, p_ae,p_cnv, dataset, read_prob_dir, a_g, b_g, print_results):
     #'''
     pool = mp.Pool() # mp.Pool(processes=num_processes)
-    infer_results = pool.starmap(analyse_mut_probs_onepos_pool, [(int(pos), dataset[str(pos)], p_ae, p_ado, a_g, b_g,
+    infer_results = pool.starmap(analyse_mut_probs_onepos_pool, [(int(pos), dataset[str(pos)], p_ae, p_ado,p_cnv, a_g, b_g,
                                                                   read_prob_dir, False) for pos in positions])
     pool.close()
     pool.join()
@@ -208,11 +213,11 @@ def calculate_loglikelihood(positions, p_ado, p_ae, dataset, read_prob_dir, a_g,
     return log_likelihood
 
 
-def analyse_mut_probs_onepos_pool(pos, dataset, p_ae, p_ado, a_g, b_g, read_prob_dir, print_results=False):
+def analyse_mut_probs_onepos_pool(pos, dataset, p_ae, p_ado,p_cnv, a_g, b_g, read_prob_dir, print_results=False):
     start_time = time.time()
 
     if print_results:
-        print("\n******\nAnalysing mutations for parameters: ", p_ae, p_ado, a_g, b_g)
+        print("\n******\nAnalysing mutations for parameters: ", p_ae, p_ado,p_cnv, a_g, b_g)
         print("Pos idx of process is: ", pos)
         print("Process id: ", os.getpid(), ". Uname: ", os.uname())
         print("\n***********\nPosition: ", pos)
@@ -249,14 +254,14 @@ def analyse_mut_probs_onepos_pool(pos, dataset, p_ae, p_ado, a_g, b_g, read_prob
                 read_dicts = precompute_reads_singleton(cell_list, z_list, bulk, print_results=False)
             save_json(filename, read_dicts)
 
-    log_zcy_filename = read_prob_dir + "log_zcy_" + str(p_ado) + "_" + str(p_ae) + ".pickle"
+    log_zcy_filename = read_prob_dir + "log_zcy_" + str(p_ado) + "_" + str(p_ae) +"_"+str(p_cnv)+ ".pickle"
     if os.path.exists(log_zcy_filename):
         if print_results:
             print("\nLoading log_ZCY dictionary...")
         log_ZCY_dict_prior = load_json(log_zcy_filename)
         log_ZCY_dict_prior = log_ZCY_dict_prior[int(pos)]
     else:
-        log_zcy_pos_filename = read_prob_dir + "log_zcy_" + str(p_ado) + "_" + str(p_ae) + "_" + str(pos) + ".pickle"
+        log_zcy_pos_filename = read_prob_dir + "log_zcy_" + str(p_ado) + "_" + str(p_ae) + "_" +str(p_cnv)+"_"+ str(pos) + ".pickle"
         if os.path.exists(log_zcy_pos_filename):
             if print_results:
                 print("\nLoading log_ZCY position dictionary...")
@@ -271,10 +276,10 @@ def analyse_mut_probs_onepos_pool(pos, dataset, p_ae, p_ado, a_g, b_g, read_prob
                     #print("\nLoading log_ZCYDDA position dictionary...")
                     log_zcydda_dict = load_json(log_zcydda_pos_filename)
                     log_ZCY_dict_prior, _ = compute_zcy_log_dict_pos_paired(dataset, read_dicts,
-                                                                            p_ado, p_ae, False, log_zcydda_dict)
+                                                                            p_ado, p_ae, p_cnv,False, log_zcydda_dict)
                 else:
                     log_ZCY_dict_prior, log_zcydda_dict = compute_zcy_log_dict_pos_paired(dataset, read_dicts,
-                                                                                          p_ado, p_ae,
+                                                                                          p_ado, p_ae,p_cnv,
                                                                                           False, log_zcydda_dict)
                     save_json(log_zcydda_pos_filename, log_zcydda_dict)
 
@@ -287,10 +292,10 @@ def analyse_mut_probs_onepos_pool(pos, dataset, p_ae, p_ado, a_g, b_g, read_prob
                     # print("\nLoading log_ZCYDDA position dictionary...")
                     log_zcydda_dict = load_json(log_zcydda_pos_filename)
                     log_ZCY_dict_prior, _ = compute_zcy_log_dict_pos_singleton(dataset, read_dicts,
-                                                                               p_ado, p_ae, False, log_zcydda_dict)
+                                                                               p_ado, p_ae,p_cnv, False, log_zcydda_dict)
                 else:
                     log_ZCY_dict_prior, log_zcydda_dict = compute_zcy_log_dict_pos_singleton(dataset, read_dicts,
-                                                                                             p_ado, p_ae,
+                                                                                             p_ado, p_ae,p_cnv,
                                                                                              False, log_zcydda_dict)
                     save_json(log_zcydda_pos_filename, log_zcydda_dict)
 
@@ -298,7 +303,7 @@ def analyse_mut_probs_onepos_pool(pos, dataset, p_ae, p_ado, a_g, b_g, read_prob
 
     normed_prob_Z, highestZ, highestZ_prob, max_key, general_lookup_table, log_prob_Z = \
         compute_mutation_probabilities_log_dp(cell_list, z_list, alpha_list, log_ZCY_dict_prior,
-                                              a_g, b_g, p_ado, print_results=False)
+                                              a_g, b_g, p_ado,p_cnv, print_results=False)
 
     if False:
         print("\n***Common Z results:\n")
@@ -320,16 +325,20 @@ def analyse_mut_probs_onepos_pool(pos, dataset, p_ae, p_ado, a_g, b_g, read_prob
 def sample_parameters(chain_results, max_iter):
     p_ado_samples = []
     p_ae_samples = []
+    p_cnv_samples = []
 
     for chain_idx in range(len(chain_results)):
-        _, chain_p_ado_samples, chain_p_ae_samples, _, _ = chain_results[chain_idx]
+        _, chain_p_ado_samples, chain_p_ae_samples,chain_p_cnv_samples, _, _ = chain_results[chain_idx]
         p_ado_samples += list(chain_p_ado_samples)
         p_ae_samples += list(chain_p_ae_samples)
+        p_cnv_samples += list(chain_p_cnv_samples)
 
     mean_p_ado = np.mean(p_ado_samples)
     mean_p_ae = np.mean(p_ae_samples)
+    mean_p_cnv= np.mean(p_cnv_samples)
 
     std_p_ado = np.std(p_ado_samples)
     std_p_ae = np.std(p_ae_samples)
+    std_p_cnv = np.std(p_cnv_samples)
 
-    return mean_p_ado, mean_p_ae, std_p_ado, std_p_ae
+    return mean_p_ado, mean_p_ae, mean_p_cnv, std_p_ado, std_p_ae, std_p_cnv
