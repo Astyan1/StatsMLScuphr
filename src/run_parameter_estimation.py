@@ -161,6 +161,8 @@ def run_metropolis(chain, dataset, read_prob_dir, output_dir, max_iter, burnin, 
             np.save(filename, p_ado_samples)
             filename = output_dir + "chain_" + str(chain) + "_iter" + str(iter_) + "_p_ae_samples"
             np.save(filename, p_ae_samples)
+            filename = output_dir + "chain_" + str(chain) + "_iter" + str(iter_) + "_p_cnv_samples"
+            np.save(filename, p_cnv_samples)
             filename = output_dir + "chain_" + str(chain) + "_iter" + str(iter_) + "_acceptance_samples"
             np.save(filename, acceptance_samples)
             filename = output_dir + "chain_" + str(chain) + "_iter" + str(iter_) + "_logposterior_samples"
@@ -174,6 +176,8 @@ def run_metropolis(chain, dataset, read_prob_dir, output_dir, max_iter, burnin, 
             np.save(filename, np.array(p_ado_samples_all))
             filename = output_dir + "chain_" + str(chain) + "_iter" + str(iter_) + "_p_ae_samples_all"
             np.save(filename, np.array(p_ae_samples_all))
+            ilename = output_dir + "chain_" + str(chain) + "_iter" + str(iter_) + "_p_cnv_samples_all"
+            np.save(filename, np.array(p_cnv_samples_all))
             filename = output_dir + "chain_" + str(chain) + "_iter" + str(iter_) + "_acceptance_samples_all"
             np.save(filename, np.array(acceptance_samples_all))
             filename = output_dir + "chain_" + str(chain) + "_iter" + str(iter_) + "_logposterior_samples_all"
@@ -338,7 +342,7 @@ def main():
 
         print("\nPlotting results for chain ", chain_idx)
         lag_list = [0, 2, 5, 10, 50, 100]
-        plot_chain(chains_dir, chain_idx, p_ado_samples, p_ae_samples, acceptance_samples, log_posterior_samples,
+        plot_chain(chains_dir, chain_idx, p_ado_samples, p_ae_samples,p_cnv_samples, acceptance_samples, log_posterior_samples,
                    lag_list)
 
         print("\tSaving results for chain ", chain_idx)
@@ -346,6 +350,8 @@ def main():
         np.save(filename, p_ado_samples)
         filename = chains_dir + "chain_" + str(chain_idx) + "_p_ae_samples"
         np.save(filename, p_ae_samples)
+        filename = chains_dir + "chain_" + str(chain_idx) + "_p_cnv_samples"
+        np.save(filename, p_cnv_samples)
         filename = chains_dir + "chain_" + str(chain_idx) + "_acceptance_samples"
         np.save(filename, acceptance_samples)
         filename = chains_dir + "chain_" + str(chain_idx) + "_logposterior_samples"
