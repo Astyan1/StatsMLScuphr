@@ -100,7 +100,7 @@ def compute_zcy_log_dict_pos_original(dataset, read_dicts, p_ado, p_ae,p_cnv, pr
                             log_temp_x1 = log_sum_x2 + np.log(np.power(p_ado, x1) * np.power(1 - p_ado, 1 - x1))
                             log_sum_x1 = np.logaddexp(log_sum_x1, log_temp_x1)
 
-                        log_sum_zcy = log_sum_x1+cnv*np.log(p_cnv)-p_cnv-cnv-np.log(np.math.factorial(cnv))
+                        log_sum_zcy = log_sum_x1+cnv*np.log(p_cnv)-p_cnv-np.log(np.math.factorial(cnv))
 
                 log_zcy_dict[zcy_key] = log_sum_zcy
 
@@ -214,7 +214,7 @@ def compute_zcydd_log_dict_pos(dataset, read_dicts, p_ae,p_cnv, print_results, l
                                 else:
                                     log_sum_frags += np.log(p_ae) + (num_edges - 1) * np.log(1 - p_ae)
 
-                                log_sum_a = np.logaddexp(log_sum_a, log_sum_frags)+cnv*np.log(p_cnv)-p_cnv-cnv-np.log(np.math.factorial(cnv))
+                                log_sum_a = np.logaddexp(log_sum_a, log_sum_frags)+cnv*np.log(p_cnv)-p_cnv-np.log(np.math.factorial(cnv))
 
                             log_zcydd_dict[zcydd_key] = log_sum_a
 
@@ -271,7 +271,7 @@ def compute_zcy_log_dict_pos(dataset, read_dicts, p_ado, p_ae, p_cnv,print_resul
                             log_temp_x1 = log_sum_x2 + np.log(np.power(p_ado, x1) * np.power(1 - p_ado, 1 - x1))
                             log_sum_x1 = np.logaddexp(log_sum_x1, log_temp_x1)
 
-                        log_sum_zcy = log_sum_x1+cnv*np.log(p_cnv)-p_cnv-cnv-np.log(np.math.factorial(cnv))
+                        log_sum_zcy = log_sum_x1+cnv*np.log(p_cnv)-p_cnv-np.log(np.math.factorial(cnv))
 
                 log_zcy_dict[zcy_key] = log_sum_zcy
 
