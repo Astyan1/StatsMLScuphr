@@ -213,9 +213,6 @@ def compute_zcydd_log_dict_pos(dataset, read_dicts, p_ae,p_cnv, print_results, l
                                     log_sum_frags += num_edges * np.log(1 - p_ae)
                                 else:
                                     log_sum_frags += np.log(p_ae) + (num_edges - 1) * np.log(1 - p_ae)
-                                print(p_cnv)
-                                print(np.log(p_cnv))
-                                print(np.log(np.math.factorial(cnv)))
                                 log_sum_a = np.logaddexp(log_sum_a, log_sum_frags)+cnv*np.log(p_cnv)-p_cnv-np.log(np.math.factorial(cnv))
 
                             log_zcydd_dict[zcydd_key] = log_sum_a
