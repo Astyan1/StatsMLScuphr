@@ -114,6 +114,7 @@ def compute_zcy_log_dict_pos_original(dataset, read_dicts, p_ado, p_ae,p_cnv, pr
 
 
 def compute_zcydd_log_dict_pos(dataset, read_dicts, p_ae,p_cnv, print_results, log_zcydda_dict=None):
+    print(p_cnv)
     """ Original log_ZCY calculation. Returns a dictionary with zcy key. """
     if print_results:
         print("\n*****\nComputing Log Z_c_y dictionary...")

@@ -127,7 +127,6 @@ def analyse_real_dbc_one_pos(pos, output, dataset_sample, matrix_dir):
 def analyse_infer_dbc_one_pos_pool(pos, dataset, p_ae, p_ado,p_cnv,a_g, b_g, data_type, read_prob_dir,
                                    matrix_dir, common_z_dir, print_results=False):
     start_time = time.time()
-    print(p_cnv)
 
     #print("\n******\nAnalysing DBC for parameters: ", p_ae, p_ado, a_g, b_g)
     #print("Pos idx of process is: ", pos)
