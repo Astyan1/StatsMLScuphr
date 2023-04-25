@@ -114,7 +114,6 @@ def compute_zcy_log_dict_pos_original(dataset, read_dicts, p_ado, p_ae,p_cnv, pr
 
 
 def compute_zcydd_log_dict_pos(dataset, read_dicts, p_ae,p_cnv, print_results, log_zcydda_dict=None):
-    print(p_cnv)
     """ Original log_ZCY calculation. Returns a dictionary with zcy key. """
     if print_results:
         print("\n*****\nComputing Log Z_c_y dictionary...")
@@ -238,7 +237,7 @@ def compute_zcy_log_dict_pos(dataset, read_dicts, p_ado, p_ae, p_cnv,print_resul
     cell_list = dataset['cell_list']
     z_list = dataset['z_list']
 
-    log_zcydd_dict, log_zcydda_dict = compute_zcydd_log_dict_pos(dataset, read_dicts, p_ae, print_results, log_zcydda_dict)
+    log_zcydd_dict, log_zcydda_dict = compute_zcydd_log_dict_pos(dataset, read_dicts, p_ae, p_cnv,print_results, log_zcydda_dict)
 
     log_zcy_dict = {}
     for z_ind in range(len(z_list)):
