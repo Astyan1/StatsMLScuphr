@@ -222,6 +222,8 @@ def main():
                         type=float, default=0.1)
     parser.add_argument('--p_ae', help="Specify the initial amplification error probability of a base. Default: -1",
                         type=float, default=0.001)
+    parser.add_argument('--p_cnv', help="Specify the initial amplification error probability of a base. Default: -1",
+                        type=float, default=0.05)
     parser.add_argument('--pos_range_min', help="Specify the position range (min value). Default: 0", type=int,
                         default=0)
     parser.add_argument('--pos_range_max', help="Specify the position range (max value). Default: 0", type=int,

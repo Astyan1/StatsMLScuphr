@@ -97,34 +97,9 @@ def save_different_trees(dir_info, csv_filename, case_name, tns):  # case_name =
 
 def print_trees(dir_info, case_name):
     print("\nTrees of case: ", case_name, "\n")
-
-    filename = dir_info + case_name + "_w_bulk_node.tre"
-    tree = dendropy.Tree.get(file=open(filename), schema="newick")  # ,tree_offset=0)
-    print("\n\tCase: ", case_name, ".\tTree with bulk as a node:\n")
-    print(tree.as_ascii_plot())
-    print(tree.as_string(schema="newick"))
-
     filename = dir_info + case_name + "_w_bulk_root.tre"
     tree = dendropy.Tree.get(file=open(filename), schema="newick")
     print("\n\tCase: ", case_name, ".\tTree with bulk as a root:\n")
-    print(tree.as_ascii_plot())
-    print(tree.as_string(schema="newick"))
-
-    filename = dir_info + case_name + "_w_bulk_root_midpoint.tre"
-    tree = dendropy.Tree.get(file=open(filename), schema="newick")
-    print("\n\tCase: ", case_name, ".\tTree with bulk, midpoint rooted:\n")
-    print(tree.as_ascii_plot())
-    print(tree.as_string(schema="newick"))
-
-    filename = dir_info + case_name + "_wo_bulk.tre"
-    tree = dendropy.Tree.get(file=open(filename), schema="newick")
-    print("\n\tCase: ", case_name, ".\tTree without bulk:\n")
-    print(tree.as_ascii_plot())
-    print(tree.as_string(schema="newick"))
-
-    filename = dir_info + case_name + "_wo_bulk_midpoint.tre"
-    tree = dendropy.Tree.get(file=open(filename), schema="newick")
-    print("\n\tCase: ", case_name, ".\tTree without bulk, midpoint rooted:\n")
     print(tree.as_ascii_plot())
     print(tree.as_string(schema="newick"))
 

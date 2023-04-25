@@ -148,6 +148,8 @@ def main():
                         type=float, default=0.1)
     parser.add_argument('--p_ae', help="Specify the initial amplification error probability of a base. Default: 0.001",
                         type=float, default=0.001)
+    parser.add_argument('--p_cnv', help="Specify the initial amplification error probability of a base. Default: 0.001",
+                        type=float, default=0.05)
     parser.add_argument('--pos_range_min', help="Specify the position range (min value). Default: 0", type=int,
                         default=0)
     parser.add_argument('--pos_range_max', help="Specify the position range (max value). Default: 0", type=int,
@@ -259,7 +261,7 @@ def main():
     if args.scuphr_strategy == "paired":
         pool = mp.Pool()
         infer_results = pool.starmap(analyse_infer_dbc_one_pos_pool_paired,
-                                     [(int(pos), dataset[str(pos)], args.p_ae, args.p_ado,
+                                     [(int(pos), dataset[str(pos)], args.p_ae, args.p_ado,args.p_cnv,
                                        args.a_g, args.b_g, args.data_type,
                                        read_prob_dir, matrix_dir, common_z_dir,
                                        print_results) for pos in positions_paired])
@@ -268,7 +270,7 @@ def main():
     elif args.scuphr_strategy == "singleton":
         pool = mp.Pool()
         infer_results = pool.starmap(analyse_infer_dbc_one_pos_pool_singleton,
-                                     [(int(pos), dataset[str(pos)], args.p_ae, args.p_ado,
+                                     [(int(pos), dataset[str(pos)], args.p_ae, args.p_ado,args.p_cnv,
                                        args.a_g, args.b_g, args.data_type,
                                        read_prob_dir, matrix_dir, common_z_dir,
                                        print_results) for pos in positions_singleton])
@@ -277,7 +279,7 @@ def main():
     else:  #args.scuphr_strategy == "hybrid":
         pool = mp.Pool()
         infer_results_paired = pool.starmap(analyse_infer_dbc_one_pos_pool_paired,
-                                     [(int(pos), dataset[str(pos)], args.p_ae, args.p_ado,
+                                     [(int(pos), dataset[str(pos)], args.p_ae, args.p_ado,args.p_cnv,
                                        args.a_g, args.b_g, args.data_type,
                                        read_prob_dir, matrix_dir, common_z_dir,
                                        print_results) for pos in positions_paired])
@@ -286,7 +288,7 @@ def main():
 
         pool = mp.Pool()
         infer_results_singleton = pool.starmap(analyse_infer_dbc_one_pos_pool_singleton,
-                                     [(int(pos), dataset[str(pos)], args.p_ae, args.p_ado,
+                                     [(int(pos), dataset[str(pos)], args.p_ae, args.p_ado,args.p_cnv,
                                        args.a_g, args.b_g, args.data_type,
                                        read_prob_dir, matrix_dir, common_z_dir,
                                        print_results) for pos in positions_singleton])

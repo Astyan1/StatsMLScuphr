@@ -124,7 +124,7 @@ def analyse_real_dbc_one_pos(pos, output, dataset_sample, matrix_dir):
     output.put((pos, real_dist_matrix))
 
 
-def analyse_infer_dbc_one_pos_pool(pos, dataset, p_ae, p_ado, a_g, b_g, data_type, read_prob_dir,
+def analyse_infer_dbc_one_pos_pool(pos, dataset, p_ae, p_ado,p_cnv,a_g, b_g, data_type, read_prob_dir,
                                    matrix_dir, common_z_dir, print_results=False):
     start_time = time.time()
 
@@ -164,13 +164,13 @@ def analyse_infer_dbc_one_pos_pool(pos, dataset, p_ae, p_ado, a_g, b_g, data_typ
     # output =  mp.Queue()
     # pos, log_zcy_dict_prior = computeZCYLogDict(pos, output, dataset, read_dicts, p_ado, p_ae, printResults)
 
-    log_zcy_filename = read_prob_dir + "log_zcy_" + str(p_ado) + "_" + str(p_ae) + ".pickle"
+    log_zcy_filename = read_prob_dir + "log_zcy_" + str(p_ado) + "_" + str(p_ae) +"_"+str(p_cnv)+ ".pickle"
     if os.path.exists(log_zcy_filename) and os.path.getsize(log_zcy_filename) > 0:
         #print("\nLoading log_ZCY dictionary...")
         log_zcy_dict_prior = load_json(log_zcy_filename)
         log_zcy_dict_prior = log_zcy_dict_prior[int(pos)]
     else:
-        log_zcy_pos_filename = read_prob_dir + "log_zcy_" + str(p_ado) + "_" + str(p_ae) + "_" + str(pos) + ".pickle"
+        log_zcy_pos_filename = read_prob_dir + "log_zcy_" + str(p_ado) + "_" + str(p_ae) + "_"+str(p_cnv)+"_" + str(pos) + ".pickle"
         if os.path.exists(log_zcy_pos_filename) and os.path.getsize(log_zcy_pos_filename) > 0:
             #print("\nLoading log_ZCY position dictionary...")
             log_zcy_dict_prior = load_json(log_zcy_pos_filename)
@@ -182,10 +182,10 @@ def analyse_infer_dbc_one_pos_pool(pos, dataset, p_ae, p_ado, a_g, b_g, data_typ
             if os.path.exists(log_zcydda_pos_filename) and os.path.getsize(log_zcydda_pos_filename) > 0:
                 #print("\nLoading log_ZCYDDA position dictionary...")
                 log_zcydda_dict = load_json(log_zcydda_pos_filename)
-                log_zcy_dict_prior, _ = compute_zcy_log_dict_pos(dataset, read_dicts, p_ado, p_ae, print_results, log_zcydda_dict)
+                log_zcy_dict_prior, _ = compute_zcy_log_dict_pos(dataset, read_dicts, p_ado, p_ae,p_cnv, print_results, log_zcydda_dict)
                 #save_json(log_zcy_pos_filename, log_zcy_dict_prior)
             else:
-                log_zcy_dict_prior, log_zcydda_dict = compute_zcy_log_dict_pos(dataset, read_dicts, p_ado, p_ae, print_results, log_zcydda_dict)
+                log_zcy_dict_prior, log_zcydda_dict = compute_zcy_log_dict_pos(dataset, read_dicts, p_ado, p_ae,p_cnv, print_results, log_zcydda_dict)
                 save_json(log_zcydda_pos_filename, log_zcydda_dict)
                 #save_json(log_zcy_pos_filename, log_zcy_dict_prior)
 
@@ -203,7 +203,7 @@ def analyse_infer_dbc_one_pos_pool(pos, dataset, p_ae, p_ado, a_g, b_g, data_typ
         print("Log probabilities of common mutation type Z: \n", log_prob_z)
         print("sum Z: \n", sum(np.exp(log_prob_z)))
 
-    gen_filename = read_prob_dir + "gen_lookup_" + str(p_ado) + "_" + str(p_ae) + "_" + str(pos) + ".pickle"
+    gen_filename = read_prob_dir + "gen_lookup_" + str(p_ado) + "_" + str(p_ae) + "_"+str(p_cnv)+"_" + str(pos) + ".pickle"
     #save_dictionary(gen_filename, general_lookup_table)
 
     filename2 = common_z_dir + "commonZstatus_" + str(pos) + ".txt"
@@ -340,6 +340,8 @@ def main():
                         type=float, default=0.1)
     parser.add_argument('--p_ae', help="Specify the initial amplification error probability of a base. Default: 0.001",
                         type=float, default=0.001)
+    parser.add_argument('--p_cnv', help="Specify the initial amplification error probability of a base. Default: 0.001",
+                        type=float, default=0.05)
     parser.add_argument('--pos_range_min', help="Specify the position range (min value). Default: 0", type=int,
                         default=0)
     parser.add_argument('--pos_range_max', help="Specify the position range (max value). Default: 0", type=int,
@@ -421,7 +423,7 @@ def main():
     print("\n*****\nCalculating inferred distances...")
 
     pool = mp.Pool()
-    infer_results = pool.starmap(analyse_infer_dbc_one_pos_pool, [(int(pos), dataset[str(pos)], args.p_ae, args.p_ado,
+    infer_results = pool.starmap(analyse_infer_dbc_one_pos_pool, [(int(pos), dataset[str(pos)], args.p_ae, args.p_ado,args.p_cnv,
                                                                    args.a_g, args.b_g, args.data_type,
                                                                    read_prob_dir, matrix_dir, common_z_dir,
                                                                    print_results) for pos in positions])

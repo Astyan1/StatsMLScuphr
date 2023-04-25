@@ -87,10 +87,10 @@ def compute_zcy_log_dict_pos_original(dataset, read_dicts, p_ado, p_ae,p_cnv, pr
                                                     print(zcy_key, log_prob_frag, np.exp(log_prob_frag), key, new_frag_key)
                                                     sys.exit()
 
-                                                log_sum_frags = np.logaddexp(log_sum_frags, (log_prob_read + log_prob_frag))
+                                                log_sum_frags = np.logaddexp(log_sum_frags, (log_prob_read + log_prob_frag))+cnv*np.log(p_cnv)-p_cnv-cnv-np.log(np.math.factorial(cnv))
                                                 log_frag_prob_dict[new_frag_key] = log_prob_frag
 
-                            log_temp_x2 = log_sum_frags + np.log(np.power(p_ado, x2) * np.power(1 - p_ado, 1 - x2))+cnv*np.log(p_cnv)-p_cnv-cnv-np.log(np.math.factorial(cnv))
+                            log_temp_x2 = log_sum_frags + np.log(np.power(p_ado, x2) * np.power(1 - p_ado, 1 - x2))
                             log_sum_x2 = np.logaddexp(log_sum_x2, log_temp_x2)
 
                         log_temp_x1 = log_sum_x2 + np.log(np.power(p_ado, x1) * np.power(1 - p_ado, 1 - x1))
@@ -166,29 +166,30 @@ def compute_zcydd_log_dict_pos(dataset, read_dicts, p_ae,p_cnv, print_results, l
                                             log_sum_frags = np.log(1)
 
                                     else:
-                                        ado_stats = np.array([x1, x2])
-                                        lambda_list = partition_lambda(lc, ado_stats)
-                                        fragment_list = enumerate_fragment3(f1f2)
+                                        for cnv in range(4):
+                                            ado_stats = np.array([x1, x2])
+                                            lambda_list = partition_lambda(lc, ado_stats)
+                                            fragment_list = enumerate_fragment3(f1f2)
 
-                                        log_frag_prob_dict = {}
+                                            log_frag_prob_dict = {}
 
-                                        for fragments in fragment_list:
-                                            for lambdas in lambda_list:
-                                                if (a == 0 and lambdas[-1] == 0) or (a == 1 and lambdas[-1] > 0):
-                                                    key_1 = "_".join(str(aa) for aa in fragments)
-                                                    key_2 = "_".join(str(aa) for aa in lambdas)
-                                                    key = key_1 + "_" + key_2
-                                                    new_read_key = convert_fragment_lambda_key_format(key)
-                                                    log_prob_read = read_dicts[str(c)][new_read_key]
+                                            for fragments in fragment_list:
+                                                for lambdas in lambda_list:
+                                                    if (a == 0 and lambdas[-1] == 0) or (a == 1 and lambdas[-1] > 0):
+                                                        key_1 = "_".join(str(aa) for aa in fragments)
+                                                        key_2 = "_".join(str(aa) for aa in lambdas)
+                                                        key = key_1 + "_" + key_2
+                                                        new_read_key = convert_fragment_lambda_key_format(key)
+                                                        log_prob_read = read_dicts[str(c)][new_read_key]
 
-                                                    new_frag_key = key
-                                                    if lambdas[2] == 0:
-                                                        new_frag_key = key[0:13] + 'N N' + key[16:]
+                                                        new_frag_key = key
+                                                        if lambdas[2] == 0:
+                                                            new_frag_key = key[0:13] + 'N N' + key[16:]
 
-                                                    if new_frag_key not in log_frag_prob_dict:
-                                                        log_prob_frag = fragment_log_probability(fragments, lambdas, f1f2, ado_stats)
-                                                        log_sum_frags = np.logaddexp(log_sum_frags, (log_prob_read + log_prob_frag))
-                                                        log_frag_prob_dict[new_frag_key] = log_prob_frag
+                                                        if new_frag_key not in log_frag_prob_dict:
+                                                            log_prob_frag = fragment_log_probability(fragments, lambdas, f1f2, ado_stats)
+                                                            log_sum_frags = np.logaddexp(log_sum_frags, (log_prob_read + log_prob_frag))+cnv*np.log(p_cnv)-p_cnv-cnv-np.log(np.math.factorial(cnv))
+                                                            log_frag_prob_dict[new_frag_key] = log_prob_frag
 
                             if not log_zcydda_dict_loaded:
                                 log_zcydda_dict[zcydda_key] = log_sum_frags
@@ -196,13 +197,13 @@ def compute_zcydd_log_dict_pos(dataset, read_dicts, p_ae,p_cnv, print_results, l
                             num_edges = 2 * lc - 1
                             if x1 == 0 and x2 == 0:
                                 num_edges = 2 * lc - 2
+                            for cnv in range(4):
+                                if a == 0:
+                                    log_sum_frags += num_edges * np.log(1 - p_ae)
+                                else:
+                                    log_sum_frags += np.log(p_ae) + (num_edges - 1) * np.log(1 - p_ae)
 
-                            if a == 0:
-                                log_sum_frags += num_edges * np.log(1 - p_ae)
-                            else:
-                                log_sum_frags += np.log(p_ae) + (num_edges - 1) * np.log(1 - p_ae)
-
-                            log_sum_a = np.logaddexp(log_sum_a, log_sum_frags)
+                                log_sum_a = np.logaddexp(log_sum_a, log_sum_frags)+cnv*np.log(p_cnv)-p_cnv-cnv-np.log(np.math.factorial(cnv))
 
                         log_zcydd_dict[zcydd_key] = log_sum_a
 
