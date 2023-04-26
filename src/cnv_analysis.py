@@ -83,8 +83,8 @@ def tree_analysis(PATH):
 def main():
     # code to process command line arguments
     parser = argparse.ArgumentParser(description='CNV_Analysis')
-    parser.add_argument('truth_dir', help="Specify the directory.", type=str)
-    parser.add_argument('res_dir', help="Specify the directory.", type=str)
+    parser.add_argument('--truth_dir', help="Specify the directory.", type=str)
+    parser.add_argument('--res_dir', help="Specify the directory.", type=str)
     args = parser.parse_args()
 
     tree=tree_analysis(args.truth_dir)
