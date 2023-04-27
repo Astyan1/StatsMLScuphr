@@ -87,7 +87,7 @@ def main():
     parser.add_argument('--res_dir', help="Specify the directory.", type=str)
     args = parser.parse_args()
 
-    tree=tree_analysis(args.truth_dir)
+    tree,list_cnv=tree_analysis(args.truth_dir)
     tree_inferred=dendropy.Tree.get(path=args.res_dir+'inferred_w_bulk_root.tre',schema='newick')
     print("True Tree with CNV:\n",tree)
     print("Inferred Tree:\n",tree_inferred.as_ascii_plot(show_internal_node_labels=True))
